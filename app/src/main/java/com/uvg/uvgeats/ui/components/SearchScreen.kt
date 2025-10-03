@@ -7,12 +7,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,18 +25,30 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.uvg.uvgeats.R
+import kotlinx.coroutines.flow.collectLatest
 
-// modelo de datos para productos
+// modelo de datos
 data class FoodItem(
     val name: String,
     val brand: String,
     val imageRes: Int
 )
 
-// pantalla principal
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(foodList: List<FoodItem>) {
+    var items by remember { mutableStateOf(foodList.toMutableList()) }
+    val listState = rememberLazyGridState()
+
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .collectLatest { lastVisible ->
+                if (lastVisible == items.size - 1) {
+                    items = (items + foodList).toMutableList()
+                }
+            }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -52,6 +65,7 @@ fun SearchScreen(foodList: List<FoodItem>) {
     ) { paddingValues ->
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
+            state = listState,
             modifier = Modifier
                 .padding(paddingValues)
                 .padding(8.dp),
@@ -59,7 +73,7 @@ fun SearchScreen(foodList: List<FoodItem>) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(foodList) { food ->
+            items(items) { food ->
                 FoodCard(food)
             }
         }
@@ -86,7 +100,7 @@ fun SearchBar() {
             imageVector = Icons.Default.Close,
             contentDescription = "Clear",
             tint = Color.Black,
-            modifier = Modifier.clickable { /* TODO: limpiar búsqueda */ }
+            modifier = Modifier.clickable { /* limpiar búsqueda */ }
         )
     }
 }
@@ -111,7 +125,7 @@ fun FoodCard(food: FoodItem) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFF5E8C5A)) // Verde como en la imagen
+                .background(Color(0xFF5E8C5A))
                 .padding(8.dp)
         ) {
             Text(
@@ -128,6 +142,7 @@ fun FoodCard(food: FoodItem) {
         }
     }
 }
+
 @Preview(showBackground = true)
 @Composable
 fun SearchScreenPreview() {
@@ -135,9 +150,11 @@ fun SearchScreenPreview() {
         FoodItem("Hamburguesa", "Gitane", android.R.drawable.ic_menu_camera),
         FoodItem("Crepa", "Saúl", android.R.drawable.ic_menu_gallery),
         FoodItem("Camarones", "Gitane", android.R.drawable.ic_menu_report_image),
-        FoodItem("Lays", "Gitane", android.R.drawable.ic_menu_slideshow)
+        FoodItem("Lays", "Gitane", android.R.drawable.ic_menu_slideshow),
+        FoodItem("Pizza", "Gitane", android.R.drawable.ic_menu_gallery),
+        FoodItem("Tacos", "Gitane", android.R.drawable.ic_menu_camera),
+        FoodItem("Ensalada", "Gitane", android.R.drawable.ic_menu_report_image),
+        FoodItem("Sushi", "Gitane", android.R.drawable.ic_menu_slideshow),
     )
     SearchScreen(foodList = sampleFoodList)
 }
-
-
