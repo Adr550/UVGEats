@@ -133,7 +133,7 @@ fun FoodCard(food: FoodItem) {
 fun SearchScreenPreview() {
     val sampleFoodList = listOf(
         FoodItem("Hamburguesa", "Gitane", android.R.drawable.ic_menu_camera),
-        FoodItem("Crepa", "Gitane", android.R.drawable.ic_menu_gallery),
+        FoodItem("Crepa", "Saúl", android.R.drawable.ic_menu_gallery),
         FoodItem("Camarones", "Gitane", android.R.drawable.ic_menu_report_image),
         FoodItem("Lays", "Gitane", android.R.drawable.ic_menu_slideshow)
     )
