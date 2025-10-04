@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Button
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -180,9 +181,10 @@ fun SearchBar(searchText: String, onClearClick: () -> Unit) {
 fun FoodCard(food: FoodItem, onClick: () -> Unit) {
     Column(
         modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color.White)
-            .fillMaxWidth()
+        .clip(RoundedCornerShape(16.dp))
+        .background(Color.White)
+        .fillMaxWidth()
+        .clickable( true, onClick = onClick)
     ) {
         Image(
             painter = painterResource(id = food.imageRes),
@@ -286,5 +288,5 @@ fun SearchScreenPreview() {
         FoodItem("Ensalada", "Gitane", android.R.drawable.ic_menu_report_image),
         FoodItem("Sushi", "Gitane", android.R.drawable.ic_menu_slideshow),
     )
-    SearchScreen(foodList = sampleFoodList, {})
+    SearchScreen(foodList = sampleFoodList) {}
 }

@@ -1,6 +1,6 @@
 package com.uvg.uvgeats.ui.navigation
 
-object routes {
+object NavigationRoutes {
     const val welcome = "welcome"
     const val login = "login"
     const val register = "register"

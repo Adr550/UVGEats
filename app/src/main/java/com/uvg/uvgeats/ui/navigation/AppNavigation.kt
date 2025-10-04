@@ -15,25 +15,25 @@ import com.uvg.uvgeats.ui.components.WelcomeScreen
 
 @Composable
 fun AppNavigation(navController: NavHostController = rememberNavController()) {
-    NavHost(navController = navController, startDestination = routes.welcome){
-        composable(routes.welcome){
+    NavHost(navController = navController, startDestination = NavigationRoutes.welcome){
+        composable(NavigationRoutes.welcome){
             WelcomeScreen (
-                onCreateAccountClick={ navController.navigate(routes.register) },
-                onLoginClick={ navController.navigate(routes.login) }
+                onCreateAccountClick={ navController.navigate(NavigationRoutes.register) },
+                onLoginClick={ navController.navigate(NavigationRoutes.login) }
             )
         }
-        composable(routes.login){
+        composable(NavigationRoutes.login){
             LoginScreen(
-                onLoginClick={ navController.navigate(routes.search) },
-                onForgotPasswordClick={ navController.navigate(routes.register) }
+                onLoginClick={ navController.navigate(NavigationRoutes.search) },
+                onForgotPasswordClick={ navController.navigate(NavigationRoutes.register) }
             )
         }
-        composable(routes.register){
+        composable(NavigationRoutes.register){
             RegisterScreen(
-                onRegisterClick={ navController.navigate(routes.search) }
+                onRegisterClick={ navController.navigate(NavigationRoutes.search) }
             )
         }
-        composable(routes.search){
+        composable(NavigationRoutes.search){
             SearchScreen(
                 listOf(
                     FoodItem("Hamburguesa", "Gitane", drawable.ic_menu_camera),
@@ -45,18 +45,18 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                     FoodItem("Ensalada", "Gitane", drawable.ic_menu_report_image),
                     FoodItem("Sushi", "Gitane", drawable.ic_menu_slideshow),
                 ),
-                onItemClick={ navController.navigate(routes.detail) }
+                onItemClick={ navController.navigate(NavigationRoutes.detail) }
             )
         }
-        composable(routes.detail){
+        composable(NavigationRoutes.detail){
             DetailScreen(
-                onBackClick={ navController.navigate(routes.back) },
+                onBackClick={ navController.navigate(NavigationRoutes.back) },
                 food = FoodItem(
                     "Hamburguesa", "Gitane", drawable.ic_menu_camera
                 )
             )
         }
-        composable(routes.back){
+        composable(NavigationRoutes.back){
             navController.popBackStack()
         }
     }

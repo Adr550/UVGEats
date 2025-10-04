@@ -74,7 +74,7 @@ fun WelcomeScreen(
                 onClick = { onCreateAccountClick },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Crea Cuenta")
+                Text("Crear Cuenta")
             }
 
             Spacer(modifier = Modifier.height(16.dp))
