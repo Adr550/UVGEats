@@ -2,11 +2,21 @@ package com.uvg.uvgeats.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,19 +30,20 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class) // necesario para usar Scaffold
 @Composable
 fun DetailScreen(
-    navController: NavController,
+    onBackClick: () -> Unit = {}, // cambiar por eventos?
     food: FoodItem
 ) {
+    // contenedor de los elementos, scaffold
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Menu de ${food.name}") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Atras")
+                    IconButton(onClick = onBackClick ) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atras")
                     }
                 }
             )
@@ -57,7 +68,6 @@ fun DetailScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -72,7 +82,6 @@ fun DetailScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-
             Text(
                 text = "El combo incluye una porción de papas fritas, una bebida a elección y la ${food.name.lowercase()} tradicional con tocino.",
                 fontSize = 15.sp,
@@ -85,11 +94,10 @@ fun DetailScreen(
 @Preview(showBackground = true)
 @Composable
 fun DetailScreenPreview() {
-    val navController = rememberNavController()
     val sampleFood = FoodItem(
         name = "Hamburguesa",
         brand = "Gitane",
         imageRes = android.R.drawable.ic_menu_camera
     )
-    DetailScreen(navController = navController, food = sampleFood)
+    DetailScreen({}, food = sampleFood)
 }
