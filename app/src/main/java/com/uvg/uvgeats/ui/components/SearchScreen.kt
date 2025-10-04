@@ -183,7 +183,7 @@ fun FoodCard(food: FoodItem, onClick: () -> Unit) {
         .clip(RoundedCornerShape(16.dp))
         .background(Color.White)
         .fillMaxWidth()
-        .clickable( true, onClick = onClick)
+        .clickable( true, onClick = { onClick() } )
     ) {
         Image(
             painter = painterResource(id = food.imageRes),
@@ -248,14 +248,14 @@ fun SideBar(
             // contentDescription para accesibilidad
             label = { Text("Favoritos") },
             selected = false,
-            onClick = onMenuClick // cerrar el drawer
+            onClick = {onMenuClick()} // cerrar el drawer
         )
 
         NavigationDrawerItem(
             icon = { Icon(Icons.Default.Create, contentDescription = "Rango de precios") },
             label = { Text("Rango de precios") },
             selected = false,
-            onClick = onMenuClick
+            onClick = {onMenuClick()}
         )
 
         Column(modifier = Modifier.padding(horizontal = 28.dp, vertical = 12.dp)) {

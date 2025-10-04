@@ -71,7 +71,7 @@ fun WelcomeScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
-                onClick = { onCreateAccountClick },
+                onClick = { onCreateAccountClick() },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Crear Cuenta")
@@ -80,7 +80,7 @@ fun WelcomeScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedButton(
-                onClick = onLoginClick,
+                onClick = {onLoginClick()},
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Iniciar Sesión")

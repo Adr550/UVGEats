@@ -40,7 +40,7 @@ fun DetailScreen(
             TopAppBar(
                 title = { Text("Menu de ${food.name}") },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick ) {
+                    IconButton(onClick = {onBackClick} ) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atras")
                     }
                 }
