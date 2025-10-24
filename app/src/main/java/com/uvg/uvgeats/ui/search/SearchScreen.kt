@@ -4,10 +4,12 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,6 +23,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -31,14 +35,16 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,13 +52,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.uvg.uvgeats.data.model.FoodItem
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 // Screen con ViewModel
@@ -63,18 +69,26 @@ fun SearchScreenRoute(
     viewModel: SearchViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->
             when (effect) {
                 is SearchUiEffect.NavigateToDetail -> onNavigateToDetail(effect.foodItem)
                 is SearchUiEffect.NavigateToFavorites -> onNavigateToFavorites()
+                is SearchUiEffect.ShowError -> {
+                    snackbarHostState.showSnackbar(
+                        message = effect.message,
+                        actionLabel = "Reintentar"
+                    )
+                }
             }
         }
     }
 
     SearchScreen(
         uiState = uiState,
+        snackbarHostState = snackbarHostState,
         onEvent = viewModel::onEvent,
         onLoadMore = viewModel::loadMoreItems
     )
@@ -85,6 +99,7 @@ fun SearchScreenRoute(
 @Composable
 fun SearchScreen(
     uiState: SearchUiState,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onEvent: (SearchUiEvent) -> Unit,
     onLoadMore: () -> Unit
 ) {
@@ -92,15 +107,7 @@ fun SearchScreen(
     val scope = rememberCoroutineScope()
     val listState = rememberLazyGridState()
 
-    // Detectar scroll al final para cargar más items
-    LaunchedEffect(listState) {
-        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
-            .collectLatest { lastVisible ->
-                if (lastVisible == uiState.filteredFoodList.size - 1) {
-                    onLoadMore()
-                }
-            }
-    }
+    // ... código existente ...
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -119,6 +126,7 @@ fun SearchScreen(
         }
     ) {
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
                     title = {
@@ -142,23 +150,72 @@ fun SearchScreen(
                 )
             }
         ) { paddingValues ->
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                state = listState,
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .padding(8.dp),
-                contentPadding = PaddingValues(8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(uiState.filteredFoodList) { food ->
-                    FoodCard(
-                        food = food,
-                        onClick = { onEvent(SearchUiEvent.FoodItemClicked(food)) }
-                    )
+            Box(modifier = Modifier.padding(paddingValues)) {
+                when {
+                    uiState.isLoading && uiState.filteredFoodList.isEmpty() -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                    uiState.errorMessage != null && uiState.filteredFoodList.isEmpty() -> {
+                        ErrorView(
+                            message = uiState.errorMessage,
+                            onRetry = { onEvent(SearchUiEvent.RetryClicked) }
+                        )
+                    }
+                    else -> {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(2),
+                            state = listState,
+                            modifier = Modifier.padding(8.dp),
+                            contentPadding = PaddingValues(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(uiState.filteredFoodList) { food ->
+                                FoodCard(
+                                    food = food,
+                                    onClick = { onEvent(SearchUiEvent.FoodItemClicked(food)) }
+                                )
+                            }
+                        }
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun ErrorView(
+    message: String,
+    onRetry: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "¡Oops!",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.error
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = message,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(onClick = onRetry) {
+            Text("Reintentar")
         }
     }
 }
