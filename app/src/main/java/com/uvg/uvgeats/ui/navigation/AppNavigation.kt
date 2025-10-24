@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.uvg.uvgeats.ui.components.DetailScreen
 import com.uvg.uvgeats.ui.components.FoodItem
@@ -15,49 +16,73 @@ import com.uvg.uvgeats.ui.components.WelcomeScreen
 
 @Composable
 fun AppNavigation(navController: NavHostController = rememberNavController()) {
-    NavHost(navController = navController, startDestination = NavigationRoutes.welcome){
-        composable(NavigationRoutes.welcome){
-            WelcomeScreen (
-                onCreateAccountClick={ navController.navigate(NavigationRoutes.register) },
-                onLoginClick={ navController.navigate(NavigationRoutes.login) }
-            )
-        }
-        composable(NavigationRoutes.login){
-            LoginScreen(
-                onLoginClick={ navController.navigate(NavigationRoutes.search) },
-                onForgotPasswordClick={ navController.navigate(NavigationRoutes.register) }
-            )
-        }
-        composable(NavigationRoutes.register){
-            RegisterScreen(
-                onRegisterClick={ navController.navigate(NavigationRoutes.search) }
-            )
-        }
-        composable(NavigationRoutes.search){
-            SearchScreen(
-                listOf(
-                    FoodItem("Hamburguesa", "Gitane", drawable.ic_menu_camera),
-                    FoodItem("Crepa", "Saúl", drawable.ic_menu_gallery),
-                    FoodItem("Camarones", "Gitane", drawable.ic_menu_report_image),
-                    FoodItem("Lays", "Gitane", drawable.ic_menu_slideshow),
-                    FoodItem("Pizza", "Gitane", drawable.ic_menu_gallery),
-                    FoodItem("Tacos", "Gitane", drawable.ic_menu_camera),
-                    FoodItem("Ensalada", "Gitane", drawable.ic_menu_report_image),
-                    FoodItem("Sushi", "Gitane", drawable.ic_menu_slideshow),
-                ),
-                onItemClick={ navController.navigate(NavigationRoutes.detail) }
-            )
-        }
-        composable(NavigationRoutes.detail){
-            DetailScreen(
-                onBackClick={ navController.navigate(NavigationRoutes.back) },
-                food = FoodItem(
-                    "Hamburguesa", "Gitane", drawable.ic_menu_camera
+    NavHost(navController = navController, startDestination = NavigationRoutes.auth_graph) {
+
+        // Grapho de autenticación
+        navigation(startDestination = NavigationRoutes.welcome, route = NavigationRoutes.auth_graph) {
+            composable(NavigationRoutes.welcome) {
+                WelcomeScreen(
+                    onCreateAccountClick = { navController.navigate(NavigationRoutes.register) },
+                    onLoginClick = { navController.navigate(NavigationRoutes.login) }
                 )
-            )
+            }
+
+            composable(NavigationRoutes.login) {
+                LoginScreen(
+                    onLoginClick = {
+                        // Navegar al graph principal limpiando el stack
+                        navController.navigate(NavigationRoutes.main_graph) {
+                            popUpTo(NavigationRoutes.auth_graph) { inclusive = true }
+                        }
+                    },
+                    onForgotPasswordClick = { navController.navigate(NavigationRoutes.register) }
+                )
+            }
+
+            composable(NavigationRoutes.register) {
+                RegisterScreen(
+                    onRegisterClick = {
+                        // Navega al graph principal, limpiando el stack
+                        navController.navigate(NavigationRoutes.main_graph) {
+                            popUpTo(NavigationRoutes.auth_graph) { inclusive = true }
+                        }
+                    }
+                )
+            }
         }
-        composable(NavigationRoutes.back){
-            navController.popBackStack()
+
+        // Graph principal
+        navigation(startDestination = NavigationRoutes.search, route = NavigationRoutes.main_graph) {
+            composable(NavigationRoutes.search) {
+                SearchScreen(
+                    listOf(
+                        FoodItem("Hamburguesa", "Gitane", android.R.drawable.ic_menu_camera, 30, "Cafetería CIT"),
+                        FoodItem("Crepa", "Saúl", android.R.drawable.ic_menu_gallery, 25, "Cafetería CIT"),
+                        FoodItem("Camarones", "Gitane", android.R.drawable.ic_menu_report_image, 45, "Cafetería CIT"),
+                        FoodItem("Lays", "Gitane", android.R.drawable.ic_menu_slideshow, 15, "Máquina espendedora"),
+                        FoodItem("Pizza", "Gitane", android.R.drawable.ic_menu_gallery, 35, "Cafetería CIT"),
+                        FoodItem("Tacos", "Gitane", android.R.drawable.ic_menu_camera, 28, "Cafatería CIT"),
+                        FoodItem("Ensalada", "Gitane", android.R.drawable.ic_menu_report_image, 22, "Cafetería CIT"),
+                        FoodItem("Sushi", "Gitane", android.R.drawable.ic_menu_slideshow, 40, "Cafetería CIT"),
+                    ),
+                    onItemClick = { foodItem ->
+                        navController.currentBackStackEntry?.savedStateHandle?.set("selectedFood", foodItem)
+                        navController.navigate(NavigationRoutes.detail)
+                    }
+                )
+            }
+
+            composable(NavigationRoutes.detail) {
+                val foodItem = navController.previousBackStackEntry
+                    ?.savedStateHandle
+                    ?.get<FoodItem>("selectedFood")
+                    ?: FoodItem("Hamburguesa", "Gitane", android.R.drawable.ic_menu_camera)
+
+                DetailScreen(
+                    onBackClick = { navController.popBackStack() },
+                    food = foodItem
+                )
+            }
         }
     }
 }

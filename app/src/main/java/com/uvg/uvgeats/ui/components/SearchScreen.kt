@@ -56,17 +56,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 
 // modelo de datos
+@Parcelize
 data class FoodItem(
     val name: String,
     val brand: String,
-    val imageRes: Int
-)
+    val imageRes: Int,
+    val price: Int = 30,
+    val location: String = "Cafetería CIT"
+) : Parcelable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchScreen(foodList: List<FoodItem>, onItemClick: () -> Unit) {
+fun SearchScreen(foodList: List<FoodItem>, onItemClick: (FoodItem) -> Unit) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     // CoroutineScope para abrir/cerrar el menú
     val scope = rememberCoroutineScope()
@@ -143,7 +148,7 @@ fun SearchScreen(foodList: List<FoodItem>, onItemClick: () -> Unit) {
                 items(items) { food ->
                     FoodCard(
                         food = food,
-                        onClick = { onItemClick() }
+                        onClick = { onItemClick(food) }
                     )
                 }
             }
@@ -278,14 +283,14 @@ fun SideBar(
 @Composable
 fun SearchScreenPreview() {
     val sampleFoodList = listOf(
-        FoodItem("Hamburguesa", "Gitane", android.R.drawable.ic_menu_camera),
-        FoodItem("Crepa", "Saúl", android.R.drawable.ic_menu_gallery),
-        FoodItem("Camarones", "Gitane", android.R.drawable.ic_menu_report_image),
-        FoodItem("Lays", "Gitane", android.R.drawable.ic_menu_slideshow),
-        FoodItem("Pizza", "Gitane", android.R.drawable.ic_menu_gallery),
-        FoodItem("Tacos", "Gitane", android.R.drawable.ic_menu_camera),
-        FoodItem("Ensalada", "Gitane", android.R.drawable.ic_menu_report_image),
-        FoodItem("Sushi", "Gitane", android.R.drawable.ic_menu_slideshow),
+        FoodItem("Hamburguesa", "Gitane", android.R.drawable.ic_menu_camera, 30, "Cafetería CIT"),
+        FoodItem("Crepa", "Saúl", android.R.drawable.ic_menu_gallery, 25, "Cafetería Central"),
+        FoodItem("Camarones", "Gitane", android.R.drawable.ic_menu_report_image, 45, "Cafetería CIT"),
+        FoodItem("Lays", "Gitane", android.R.drawable.ic_menu_slideshow, 15, "Tienda UVG"),
+        FoodItem("Pizza", "Gitane", android.R.drawable.ic_menu_gallery, 35, "Cafetería CIT"),
+        FoodItem("Tacos", "Gitane", android.R.drawable.ic_menu_camera, 28, "Comedor"),
+        FoodItem("Ensalada", "Gitane", android.R.drawable.ic_menu_report_image, 22, "Cafetería CIT"),
+        FoodItem("Sushi", "Gitane", android.R.drawable.ic_menu_slideshow, 40, "Comedor"),
     )
     SearchScreen(foodList = sampleFoodList) {}
 }

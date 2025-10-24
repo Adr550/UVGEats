@@ -1,6 +1,7 @@
 package com.uvg.uvgeats.ui.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -40,7 +41,7 @@ fun DetailScreen(
             TopAppBar(
                 title = { Text("Menu de ${food.name}") },
                 navigationIcon = {
-                    IconButton(onClick = {onBackClick} ) {
+                    IconButton(onClick = onBackClick ) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atras")
                     }
                 }
@@ -73,8 +74,13 @@ fun DetailScreen(
                     .background(Color(0xFF5E8C5A))
                     .padding(16.dp)
             ) {
-                Text("Precio: 30Q", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                Text("Ubicación: Cafetería CIT", fontSize = 16.sp, color = Color.Black)
+                Text(
+                    "Precio: ${food.price}Q",
+                    fontSize = 18.sp,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    color = Color.Black
+                )
+                Text("Ubicación: ${food.location}", fontSize = 16.sp, color = Color.Black)
                 Text("Restaurante: ${food.brand}", fontSize = 16.sp, color = Color.Black)
             }
 
@@ -95,7 +101,11 @@ fun DetailScreenPreview() {
     val sampleFood = FoodItem(
         name = "Hamburguesa",
         brand = "Gitane",
-        imageRes = android.R.drawable.ic_menu_camera
+        imageRes = android.R.drawable.ic_menu_camera,
+        price = 30,
+        location = "Cafetería CIT"
+
+
     )
     DetailScreen({}, food = sampleFood)
 }

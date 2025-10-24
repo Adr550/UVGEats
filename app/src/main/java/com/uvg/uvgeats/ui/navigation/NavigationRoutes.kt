@@ -7,4 +7,7 @@ object NavigationRoutes {
     const val search = "search"
     const val detail = "detail"
     const val back = "back"
+
+    const val auth_graph = "auth_graph"
+    const val main_graph = "main_graph"
 }
