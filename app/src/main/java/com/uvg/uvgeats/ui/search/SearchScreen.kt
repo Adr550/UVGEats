@@ -1,4 +1,4 @@
-package com.uvg.uvgeats.ui.components
+package com.uvg.uvgeats.ui.search
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -37,13 +37,8 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,85 +49,86 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.uvg.uvgeats.data.model.FoodItem
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import android.os.Parcelable
-import kotlinx.parcelize.Parcelize
 
-// modelo de datos
-@Parcelize
-data class FoodItem(
-    val name: String,
-    val brand: String,
-    val imageRes: Int,
-    val price: Int = 30,
-    val location: String = "Cafetería CIT"
-) : Parcelable
+// Screen con ViewModel
+@Composable
+fun SearchScreenRoute(
+    onNavigateToDetail: (FoodItem) -> Unit,
+    onNavigateToFavorites: () -> Unit,
+    viewModel: SearchViewModel = viewModel()
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    LaunchedEffect(Unit) {
+        viewModel.uiEffect.collect { effect ->
+            when (effect) {
+                is SearchUiEffect.NavigateToDetail -> onNavigateToDetail(effect.foodItem)
+                is SearchUiEffect.NavigateToFavorites -> onNavigateToFavorites()
+            }
+        }
+    }
+
+    SearchScreen(
+        uiState = uiState,
+        onEvent = viewModel::onEvent,
+        onLoadMore = viewModel::loadMoreItems
+    )
+}
+
+// Composable puro sin side effects
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchScreen(foodList: List<FoodItem>, onItemClick: (FoodItem)-> Unit, onFavoritesClick: () -> Unit = {} ) {
+fun SearchScreen(
+    uiState: SearchUiState,
+    onEvent: (SearchUiEvent) -> Unit,
+    onLoadMore: () -> Unit
+) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    // CoroutineScope para abrir/cerrar el menú
     val scope = rememberCoroutineScope()
-    var sliderValue by remember { mutableFloatStateOf(50f) }
+    val listState = rememberLazyGridState()
+
+    // Detectar scroll al final para cargar más items
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .collectLatest { lastVisible ->
+                if (lastVisible == uiState.filteredFoodList.size - 1) {
+                    onLoadMore()
+                }
+            }
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            SideBar(
-                sliderValue = sliderValue,
-                onSliderChange = { newValue ->
-                    sliderValue = newValue
-                },
+            SideBarContent(
+                priceRange = uiState.priceRange,
+                onPriceRangeChange = { onEvent(SearchUiEvent.PriceRangeChanged(it)) },
                 onMenuClick = {
-                    // Cierra el menú cuando se hace clic en una opción
-                    scope.launch {
-                        drawerState.close()
-                    }
-
+                    scope.launch { drawerState.close() }
                 },
-                onFavoritesClick = onFavoritesClick
+                onFavoritesClick = {
+                    onEvent(SearchUiEvent.FavoritesClicked)
+                    scope.launch { drawerState.close() }
+                }
             )
         }
     ) {
-        // variables de estado
-        val items = remember { foodList.toMutableStateList() }
-        val listState = rememberLazyGridState()
-        var searchText by remember { mutableStateOf("") }
-        val filteredItems = if (searchText.isEmpty()) {
-            items
-        } else {
-            items.filter { food ->
-                food.name.contains(searchText, ignoreCase = true) ||
-                        food.brand.contains(searchText, ignoreCase = true)
-            }
-        }
-
-        // actualiza la lista cuando se llega al final
-        LaunchedEffect(listState) {
-            snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
-                .collectLatest { lastVisible ->
-                    if (lastVisible == items.size - 1) {
-                        items.addAll(foodList)
-                    }
-                }
-        }
-
-        // contenedor de los elementos, scaffold
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = {
                         SearchBar(
-                            searchText = searchText,
-                            onSearchTextChange = { newText -> searchText = newText },
-                            onClearClick = { searchText = "" }
+                            searchText = uiState.searchText,
+                            onSearchTextChange = { onEvent(SearchUiEvent.SearchTextChanged(it)) },
+                            onClearClick = { onEvent(SearchUiEvent.ClearSearch) }
                         )
-
                     },
                     navigationIcon = {
-                        // 5. El ícono del menú ahora abre el drawer
                         IconButton(onClick = {
                             scope.launch {
                                 drawerState.apply {
@@ -156,10 +152,10 @@ fun SearchScreen(foodList: List<FoodItem>, onItemClick: (FoodItem)-> Unit, onFav
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(filteredItems) { food ->
+                items(uiState.filteredFoodList) { food ->
                     FoodCard(
                         food = food,
-                        onClick = { onItemClick(food) }
+                        onClick = { onEvent(SearchUiEvent.FoodItemClicked(food)) }
                     )
                 }
             }
@@ -167,6 +163,7 @@ fun SearchScreen(foodList: List<FoodItem>, onItemClick: (FoodItem)-> Unit, onFav
     }
 }
 
+// Composables puros auxiliares
 @Composable
 fun SearchBar(
     searchText: String,
@@ -194,12 +191,14 @@ fun SearchBar(
                 unfocusedIndicatorColor = Color.Transparent
             )
         )
-        Icon(
-            imageVector = Icons.Default.Close,
-            contentDescription = "Clear",
-            tint = Color.Black,
-            modifier = Modifier.clickable { onClearClick() }
-        )
+        if (searchText.isNotEmpty()) {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "Clear",
+                tint = Color.Black,
+                modifier = Modifier.clickable { onClearClick() }
+            )
+        }
     }
 }
 
@@ -207,10 +206,10 @@ fun SearchBar(
 fun FoodCard(food: FoodItem, onClick: () -> Unit) {
     Column(
         modifier = Modifier
-        .clip(RoundedCornerShape(16.dp))
-        .background(Color.White)
-        .fillMaxWidth()
-        .clickable( true, onClick = { onClick() } )
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.White)
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
     ) {
         Image(
             painter = painterResource(id = food.imageRes),
@@ -238,20 +237,24 @@ fun FoodCard(food: FoodItem, onClick: () -> Unit) {
                 fontSize = 14.sp,
                 color = Color(0xFFEEEEEE)
             )
+            Text(
+                text = "${food.price}Q",
+                fontSize = 14.sp,
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
 
 @Composable
-fun SideBar(
-    sliderValue: Float,
-    onSliderChange: (Float) -> Unit,
+fun SideBarContent(
+    priceRange: Float,
+    onPriceRangeChange: (Float) -> Unit,
     onMenuClick: () -> Unit,
-    onFavoritesClick: () -> Unit = {}
+    onFavoritesClick: () -> Unit
 ) {
-    // ModalDrawerSheet es el contenedor estándar para el contenido del drawer
     ModalDrawerSheet {
-        // Un encabezado simple para el menú
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -267,34 +270,32 @@ fun SideBar(
             )
         }
 
-        // Espaciador
         Spacer(Modifier.height(12.dp))
 
-        // Opciones del menú
         NavigationDrawerItem(
             icon = { Icon(Icons.Default.Star, contentDescription = "Favoritos") },
             label = { Text("Favoritos") },
             selected = false,
-            onClick = { onFavoritesClick() }  // <- FAVORITOS LLAMA A onFavoritesClick
+            onClick = onFavoritesClick
         )
 
         NavigationDrawerItem(
             icon = { Icon(Icons.Default.Create, contentDescription = "Rango de precios") },
             label = { Text("Rango de precios") },
             selected = false,
-            onClick = { onMenuClick() }  // <- rango de precios llama a onMenuClick
+            onClick = onMenuClick
         )
 
         Column(modifier = Modifier.padding(horizontal = 28.dp, vertical = 12.dp)) {
             Text(
-                text = "Rango de precios",
+                text = "Precio máximo: ${priceRange.toInt()}Q",
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Slider(
-                value = sliderValue,
-                onValueChange = onSliderChange, // Llama a la lambda del padre
-                valueRange = 0f..100f, // Define el rango (ej. 0 a 100 quetzales)
+                value = priceRange,
+                onValueChange = onPriceRangeChange,
+                valueRange = 0f..100f,
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -306,13 +307,11 @@ fun SideBar(
 fun SearchScreenPreview() {
     val sampleFoodList = listOf(
         FoodItem("Hamburguesa", "Gitane", android.R.drawable.ic_menu_camera, 30, "Cafetería CIT"),
-        FoodItem("Crepa", "Saúl", android.R.drawable.ic_menu_gallery, 25, "Cafetería Central"),
-        FoodItem("Camarones", "Gitane", android.R.drawable.ic_menu_report_image, 45, "Cafetería CIT"),
-        FoodItem("Lays", "Gitane", android.R.drawable.ic_menu_slideshow, 15, "Tienda UVG"),
-        FoodItem("Pizza", "Gitane", android.R.drawable.ic_menu_gallery, 35, "Cafetería CIT"),
-        FoodItem("Tacos", "Gitane", android.R.drawable.ic_menu_camera, 28, "Comedor"),
-        FoodItem("Ensalada", "Gitane", android.R.drawable.ic_menu_report_image, 22, "Cafetería CIT"),
-        FoodItem("Sushi", "Gitane", android.R.drawable.ic_menu_slideshow, 40, "Comedor"),
+        FoodItem("Pizza", "Gitane", android.R.drawable.ic_menu_gallery, 35, "Cafetería CIT")
     )
-    SearchScreen(foodList = sampleFoodList, onItemClick = {}, onFavoritesClick = {})
+    SearchScreen(
+        uiState = SearchUiState(filteredFoodList = sampleFoodList),
+        onEvent = {},
+        onLoadMore = {}
+    )
 }

@@ -1,4 +1,4 @@
-package com.uvg.uvgeats.ui.components
+package com.uvg.uvgeats.ui.welcome
 
 //import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.foundation.background
@@ -17,19 +17,44 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 
+// Screen con ViewModel
+@Composable
+fun WelcomeScreenRoute(
+    onNavigateToLogin: () -> Unit,
+    onNavigateToRegister: () -> Unit,
+    viewModel: WelcomeViewModel = viewModel()
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    WelcomeScreen(
+        uiState = uiState,
+        onLoginClick = {
+            viewModel.onEvent(WelcomeUiEvent.NavigateToLogin)
+            onNavigateToLogin()
+        },
+        onRegisterClick = {
+            viewModel.onEvent(WelcomeUiEvent.NavigateToRegister)
+            onNavigateToRegister()
+        }
+    )
+}
+
+// Composable puro sin side effects
 @Composable
 fun WelcomeScreen(
-    // eventos
-    onCreateAccountClick: () -> Unit = {},
-    onLoginClick: () -> Unit = {}
+    uiState: WelcomeUiState,
+    onLoginClick: () -> Unit,
+    onRegisterClick: () -> Unit
 ) {
-    // contenedor de los elementos, scaffold
     Scaffold { padding ->
         Column(
             modifier = Modifier
@@ -39,7 +64,6 @@ fun WelcomeScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Placeholder temporal del logo
             Box(
                 modifier = Modifier
                     .size(160.dp)
@@ -49,12 +73,7 @@ fun WelcomeScreen(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                //Icon(
-                  //  imageVector = Icons.Default.Restaurant,
-                    //contentDescription = "Logo UVG Eats",
-                    //tint = Color.White,
-                    //modifier = Modifier.size(80.dp)
-                //)
+                // Logo placeholder
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -71,8 +90,9 @@ fun WelcomeScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
-                onClick = { onCreateAccountClick() },
-                modifier = Modifier.fillMaxWidth()
+                onClick = onRegisterClick,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !uiState.isLoading
             ) {
                 Text("Crear Cuenta")
             }
@@ -80,8 +100,9 @@ fun WelcomeScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedButton(
-                onClick = {onLoginClick()},
-                modifier = Modifier.fillMaxWidth()
+                onClick = onLoginClick,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !uiState.isLoading
             ) {
                 Text("Iniciar Sesión")
             }
@@ -91,7 +112,10 @@ fun WelcomeScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun PreviewWelcomeScreen() {
-    WelcomeScreen()
+fun WelcomeScreenPreview() {
+    WelcomeScreen(
+        uiState = WelcomeUiState(),
+        onLoginClick = {},
+        onRegisterClick = {}
+    )
 }
-

@@ -1,7 +1,6 @@
-package com.uvg.uvgeats.ui.components
+package com.uvg.uvgeats.ui.detail
 
 import androidx.compose.foundation.Image
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -12,13 +11,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -28,21 +34,74 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.uvg.uvgeats.data.model.FoodItem
 
-@OptIn(ExperimentalMaterial3Api::class) // necesario para usar Scaffold
+// Screen con ViewModel
+@Composable
+fun DetailScreenRoute(
+    foodItem: FoodItem,
+    onNavigateBack: () -> Unit,
+    viewModel: DetailViewModel = viewModel()
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Setear el foodItem cuando se carga la pantalla
+    LaunchedEffect(foodItem) {
+        viewModel.setFoodItem(foodItem)
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.uiEffect.collect { effect ->
+            when (effect) {
+                is DetailUiEffect.NavigateBack -> onNavigateBack()
+                is DetailUiEffect.ShowMessage -> {
+                    snackbarHostState.showSnackbar(effect.message)
+                }
+            }
+        }
+    }
+
+    DetailScreen(
+        uiState = uiState,
+        snackbarHostState = snackbarHostState,
+        onEvent = viewModel::onEvent
+    )
+}
+
+// Composable puro sin side effects
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(
-    onBackClick: () -> Unit = {}, // cambiar por eventos?
-    food: FoodItem
+    uiState: DetailUiState,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    onEvent: (DetailUiEvent) -> Unit
 ) {
-    // contenedor de los elementos, scaffold
+    val food = uiState.foodItem ?: return
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Menu de ${food.name}") },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atras")
+                    IconButton(onClick = { onEvent(DetailUiEvent.BackClicked) }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { onEvent(DetailUiEvent.ToggleFavorite) }) {
+                        Icon(
+                            imageVector = if (uiState.isFavorite) {
+                                Icons.Filled.Favorite
+                            } else {
+                                Icons.Filled.FavoriteBorder
+                            },
+                            contentDescription = "Favorito",
+                            tint = if (uiState.isFavorite) Color.Red else Color.Gray
+                        )
                     }
                 }
             )
@@ -54,7 +113,6 @@ fun DetailScreen(
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            // imagen principal
             Image(
                 painter = painterResource(id = food.imageRes),
                 contentDescription = food.name,
@@ -77,7 +135,7 @@ fun DetailScreen(
                 Text(
                     "Precio: ${food.price}Q",
                     fontSize = 18.sp,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
                 Text("Ubicación: ${food.location}", fontSize = 16.sp, color = Color.Black)
@@ -104,8 +162,9 @@ fun DetailScreenPreview() {
         imageRes = android.R.drawable.ic_menu_camera,
         price = 30,
         location = "Cafetería CIT"
-
-
     )
-    DetailScreen({}, food = sampleFood)
+    DetailScreen(
+        uiState = DetailUiState(foodItem = sampleFood),
+        onEvent = {}
+    )
 }

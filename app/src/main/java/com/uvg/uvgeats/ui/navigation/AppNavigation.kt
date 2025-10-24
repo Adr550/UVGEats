@@ -1,46 +1,55 @@
 package com.uvg.uvgeats.ui.navigation
 
-import android.R.drawable
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
-import com.uvg.uvgeats.ui.components.DetailScreen
-import com.uvg.uvgeats.ui.components.FoodItem
-import com.uvg.uvgeats.ui.components.LoginScreen
-import com.uvg.uvgeats.ui.components.RegisterScreen
-import com.uvg.uvgeats.ui.components.SearchScreen
-import com.uvg.uvgeats.ui.components.WelcomeScreen
+import com.uvg.uvgeats.data.model.FoodItem
+import com.uvg.uvgeats.ui.components.FavoritesScreen
+import com.uvg.uvgeats.ui.detail.DetailScreenRoute
+import com.uvg.uvgeats.ui.login.LoginScreenRoute
+import com.uvg.uvgeats.ui.register.RegisterScreenRoute
+import com.uvg.uvgeats.ui.search.SearchScreenRoute
+import com.uvg.uvgeats.ui.welcome.WelcomeScreenRoute
 
 @Composable
 fun AppNavigation(navController: NavHostController = rememberNavController()) {
     NavHost(navController = navController, startDestination = NavigationRoutes.auth_graph) {
 
         // Graph de autenticación
-        navigation(startDestination = NavigationRoutes.welcome, route = NavigationRoutes.auth_graph) {
+        navigation(
+            startDestination = NavigationRoutes.welcome,
+            route = NavigationRoutes.auth_graph
+        ) {
             composable(NavigationRoutes.welcome) {
-                WelcomeScreen(
-                    onCreateAccountClick = { navController.navigate(NavigationRoutes.register) },
-                    onLoginClick = { navController.navigate(NavigationRoutes.login) }
+                WelcomeScreenRoute(
+                    onNavigateToLogin = {
+                        navController.navigate(NavigationRoutes.login)
+                    },
+                    onNavigateToRegister = {
+                        navController.navigate(NavigationRoutes.register)
+                    }
                 )
             }
 
             composable(NavigationRoutes.login) {
-                LoginScreen(
-                    onLoginClick = {
+                LoginScreenRoute(
+                    onNavigateToHome = {
                         navController.navigate(NavigationRoutes.main_graph) {
                             popUpTo(NavigationRoutes.auth_graph) { inclusive = true }
                         }
                     },
-                    onForgotPasswordClick = { navController.navigate(NavigationRoutes.register) }
+                    onNavigateToForgotPassword = {
+                        navController.navigate(NavigationRoutes.register)
+                    }
                 )
             }
 
             composable(NavigationRoutes.register) {
-                RegisterScreen(
-                    onRegisterClick = {
+                RegisterScreenRoute(
+                    onNavigateToHome = {
                         navController.navigate(NavigationRoutes.main_graph) {
                             popUpTo(NavigationRoutes.auth_graph) { inclusive = true }
                         }
@@ -50,24 +59,20 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
         }
 
         // Graph principal
-        navigation(startDestination = NavigationRoutes.search, route = NavigationRoutes.main_graph) {
+        navigation(
+            startDestination = NavigationRoutes.search,
+            route = NavigationRoutes.main_graph
+        ) {
             composable(NavigationRoutes.search) {
-                SearchScreen(
-                    listOf(
-                        FoodItem("Hamburguesa", "Gitane", android.R.drawable.ic_menu_camera, 30, "Cafetería CIT"),
-                        FoodItem("Crepa", "Saúl", android.R.drawable.ic_menu_gallery, 25, "Cafetería CIT"),
-                        FoodItem("Camarones", "Gitane", android.R.drawable.ic_menu_report_image, 45, "Cafetería CIT"),
-                        FoodItem("Lays", "Gitane", android.R.drawable.ic_menu_slideshow, 15, "Máquina espendedora"),
-                        FoodItem("Pizza", "Gitane", android.R.drawable.ic_menu_gallery, 35, "Cafetería CIT"),
-                        FoodItem("Tacos", "Gitane", android.R.drawable.ic_menu_camera, 28, "Cafatería CIT"),
-                        FoodItem("Ensalada", "Gitane", android.R.drawable.ic_menu_report_image, 22, "Cafetería CIT"),
-                        FoodItem("Sushi", "Gitane", android.R.drawable.ic_menu_slideshow, 40, "Cafetería CIT"),
-                    ),
-                    onItemClick = { foodItem ->
-                        navController.currentBackStackEntry?.savedStateHandle?.set("selectedFood", foodItem)
+                SearchScreenRoute(
+                    onNavigateToDetail = { foodItem ->
+                        navController.currentBackStackEntry?.savedStateHandle?.set(
+                            "selectedFood",
+                            foodItem
+                        )
                         navController.navigate(NavigationRoutes.detail)
                     },
-                    onFavoritesClick = {  // <- AGREGAR ESTO
+                    onNavigateToFavorites = {
                         navController.navigate(NavigationRoutes.favorites)
                     }
                 )
@@ -79,15 +84,19 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                     ?.get<FoodItem>("selectedFood")
                     ?: FoodItem("Hamburguesa", "Gitane", android.R.drawable.ic_menu_camera)
 
-                DetailScreen(
-                    onBackClick = { navController.popBackStack() },
-                    food = foodItem
+                DetailScreenRoute(
+                    foodItem = foodItem,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
                 )
             }
-            // <- MOVER favorites AQUÍ (al mismo nivel que search y detail)
+
             composable(NavigationRoutes.favorites) {
                 FavoritesScreen(
-                    onBackClick = { navController.popBackStack() }
+                    onBackClick = {
+                        navController.popBackStack()
+                    }
                 )
             }
         }
