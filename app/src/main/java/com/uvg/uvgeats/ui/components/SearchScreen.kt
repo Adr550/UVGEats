@@ -71,7 +71,7 @@ data class FoodItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchScreen(foodList: List<FoodItem>, onItemClick: (FoodItem) -> Unit) {
+fun SearchScreen(foodList: List<FoodItem>, onItemClick: (FoodItem)-> Unit, onFavoritesClick: () -> Unit = {} ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     // CoroutineScope para abrir/cerrar el menú
     val scope = rememberCoroutineScope()
@@ -90,15 +90,24 @@ fun SearchScreen(foodList: List<FoodItem>, onItemClick: (FoodItem) -> Unit) {
                     scope.launch {
                         drawerState.close()
                     }
-                    // logica en el futuro
-                }
+
+                },
+                onFavoritesClick = onFavoritesClick
             )
         }
     ) {
         // variables de estado
         val items = remember { foodList.toMutableStateList() }
         val listState = rememberLazyGridState()
-        var searchText by remember { mutableStateOf("") } // Usando 'by' para simplificar
+        var searchText by remember { mutableStateOf("") }
+        val filteredItems = if (searchText.isEmpty()) {
+            items
+        } else {
+            items.filter { food ->
+                food.name.contains(searchText, ignoreCase = true) ||
+                        food.brand.contains(searchText, ignoreCase = true)
+            }
+        }
 
         // actualiza la lista cuando se llega al final
         LaunchedEffect(listState) {
@@ -117,8 +126,10 @@ fun SearchScreen(foodList: List<FoodItem>, onItemClick: (FoodItem) -> Unit) {
                     title = {
                         SearchBar(
                             searchText = searchText,
+                            onSearchTextChange = { newText -> searchText = newText },
                             onClearClick = { searchText = "" }
                         )
+
                     },
                     navigationIcon = {
                         // 5. El ícono del menú ahora abre el drawer
@@ -145,7 +156,7 @@ fun SearchScreen(foodList: List<FoodItem>, onItemClick: (FoodItem) -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(items) { food ->
+                items(filteredItems) { food ->
                     FoodCard(
                         food = food,
                         onClick = { onItemClick(food) }
@@ -157,7 +168,11 @@ fun SearchScreen(foodList: List<FoodItem>, onItemClick: (FoodItem) -> Unit) {
 }
 
 @Composable
-fun SearchBar(searchText: String, onClearClick: () -> Unit) {
+fun SearchBar(
+    searchText: String,
+    onSearchTextChange: (String) -> Unit,
+    onClearClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -166,11 +181,18 @@ fun SearchBar(searchText: String, onClearClick: () -> Unit) {
             .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = searchText.ifEmpty { "Búsqueda" },
-            color = if (searchText.isEmpty()) Color.Gray else Color.Black,
-            fontSize = 16.sp,
-            modifier = Modifier.weight(1f)
+        androidx.compose.material3.TextField(
+            value = searchText,
+            onValueChange = onSearchTextChange,
+            placeholder = { Text("Buscar comida o restaurante") },
+            modifier = Modifier.weight(1f),
+            colors = androidx.compose.material3.TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                disabledContainerColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent
+            )
         )
         Icon(
             imageVector = Icons.Default.Close,
@@ -224,7 +246,8 @@ fun FoodCard(food: FoodItem, onClick: () -> Unit) {
 fun SideBar(
     sliderValue: Float,
     onSliderChange: (Float) -> Unit,
-    onMenuClick: () -> Unit
+    onMenuClick: () -> Unit,
+    onFavoritesClick: () -> Unit = {}
 ) {
     // ModalDrawerSheet es el contenedor estándar para el contenido del drawer
     ModalDrawerSheet {
@@ -250,17 +273,16 @@ fun SideBar(
         // Opciones del menú
         NavigationDrawerItem(
             icon = { Icon(Icons.Default.Star, contentDescription = "Favoritos") },
-            // contentDescription para accesibilidad
             label = { Text("Favoritos") },
             selected = false,
-            onClick = {onMenuClick()} // cerrar el drawer
+            onClick = { onFavoritesClick() }  // <- FAVORITOS LLAMA A onFavoritesClick
         )
 
         NavigationDrawerItem(
             icon = { Icon(Icons.Default.Create, contentDescription = "Rango de precios") },
             label = { Text("Rango de precios") },
             selected = false,
-            onClick = {onMenuClick()}
+            onClick = { onMenuClick() }  // <- rango de precios llama a onMenuClick
         )
 
         Column(modifier = Modifier.padding(horizontal = 28.dp, vertical = 12.dp)) {
@@ -292,5 +314,5 @@ fun SearchScreenPreview() {
         FoodItem("Ensalada", "Gitane", android.R.drawable.ic_menu_report_image, 22, "Cafetería CIT"),
         FoodItem("Sushi", "Gitane", android.R.drawable.ic_menu_slideshow, 40, "Comedor"),
     )
-    SearchScreen(foodList = sampleFoodList) {}
+    SearchScreen(foodList = sampleFoodList, onItemClick = {}, onFavoritesClick = {})
 }

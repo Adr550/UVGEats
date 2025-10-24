@@ -18,7 +18,7 @@ import com.uvg.uvgeats.ui.components.WelcomeScreen
 fun AppNavigation(navController: NavHostController = rememberNavController()) {
     NavHost(navController = navController, startDestination = NavigationRoutes.auth_graph) {
 
-        // Grapho de autenticación
+        // Graph de autenticación
         navigation(startDestination = NavigationRoutes.welcome, route = NavigationRoutes.auth_graph) {
             composable(NavigationRoutes.welcome) {
                 WelcomeScreen(
@@ -30,7 +30,6 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             composable(NavigationRoutes.login) {
                 LoginScreen(
                     onLoginClick = {
-                        // Navegar al graph principal limpiando el stack
                         navController.navigate(NavigationRoutes.main_graph) {
                             popUpTo(NavigationRoutes.auth_graph) { inclusive = true }
                         }
@@ -42,7 +41,6 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             composable(NavigationRoutes.register) {
                 RegisterScreen(
                     onRegisterClick = {
-                        // Navega al graph principal, limpiando el stack
                         navController.navigate(NavigationRoutes.main_graph) {
                             popUpTo(NavigationRoutes.auth_graph) { inclusive = true }
                         }
@@ -68,6 +66,9 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                     onItemClick = { foodItem ->
                         navController.currentBackStackEntry?.savedStateHandle?.set("selectedFood", foodItem)
                         navController.navigate(NavigationRoutes.detail)
+                    },
+                    onFavoritesClick = {  // <- AGREGAR ESTO
+                        navController.navigate(NavigationRoutes.favorites)
                     }
                 )
             }
@@ -81,6 +82,12 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 DetailScreen(
                     onBackClick = { navController.popBackStack() },
                     food = foodItem
+                )
+            }
+            // <- MOVER favorites AQUÍ (al mismo nivel que search y detail)
+            composable(NavigationRoutes.favorites) {
+                FavoritesScreen(
+                    onBackClick = { navController.popBackStack() }
                 )
             }
         }
