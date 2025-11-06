@@ -1,6 +1,11 @@
 package com.uvg.uvgeats.ui.search
 
 import androidx.compose.foundation.Image
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
+import android.content.Context
+import androidx.compose.ui.platform.LocalContext
+import com.uvg.uvgeats.data.repository.FoodRepositoryImpl
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -56,8 +61,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.ViewModel
+import androidx.compose.runtime.collectAsState
 import com.uvg.uvgeats.data.model.FoodItem
 import kotlinx.coroutines.launch
 
@@ -65,11 +70,24 @@ import kotlinx.coroutines.launch
 @Composable
 fun SearchScreenRoute(
     onNavigateToDetail: (FoodItem) -> Unit,
-    onNavigateToFavorites: () -> Unit,
-    viewModel: SearchViewModel = viewModel()
+    onNavigateToFavorites: () -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+
+    val viewModel: SearchViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return SearchViewModel(
+                    context = context,
+                    repository = FoodRepositoryImpl(context)
+                ) as T
+            }
+        }
+    )
+
+    val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->
@@ -94,7 +112,8 @@ fun SearchScreenRoute(
     )
 }
 
-// Composable puro sin side effects
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
@@ -107,7 +126,6 @@ fun SearchScreen(
     val scope = rememberCoroutineScope()
     val listState = rememberLazyGridState()
 
-    // ... código existente ...
 
     ModalNavigationDrawer(
         drawerState = drawerState,

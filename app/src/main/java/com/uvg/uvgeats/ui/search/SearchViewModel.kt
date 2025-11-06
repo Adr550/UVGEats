@@ -1,6 +1,8 @@
 package com.uvg.uvgeats.ui.search
 
 import androidx.lifecycle.ViewModel
+import android.content.Context
+import com.uvg.uvgeats.data.repository.FoodRepositoryImpl
 import androidx.lifecycle.viewModelScope
 import com.uvg.uvgeats.data.model.Result
 import com.uvg.uvgeats.data.repository.FakeFoodRepository
@@ -14,10 +16,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class SearchViewModel(
-    private val repository: FoodRepository = FakeFoodRepository(
-        shouldSimulateError = true,
-        errorType = FakeFoodRepository.ErrorType.NETWORK
-    )
+    private val context: Context,
+    private val repository: FoodRepository = FoodRepositoryImpl(context)
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SearchUiState())

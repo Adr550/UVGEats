@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "954361084005",
+    "project_id": "uvgeats",
+    "storage_bucket": "uvgeats.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:954361084005:android:69c2de6e85617f6e03ee8c",
+        "android_client_info": {
+          "package_name": "com.uvg.uvgeats"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzuZLPkq_R9t63Q4hg24SGzm5ADOA3yrA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

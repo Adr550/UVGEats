@@ -41,7 +41,7 @@ fun LoginScreenRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Manejo de efectos (navegación)
+    // manejo de efectos
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->
             when (effect) {
@@ -61,7 +61,6 @@ fun LoginScreenRoute(
     )
 }
 
-// Composable puro sin side effects
 @Composable
 fun LoginScreen(
     uiState: LoginUiState,
