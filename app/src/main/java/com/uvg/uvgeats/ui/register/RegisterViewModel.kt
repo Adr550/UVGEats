@@ -2,6 +2,9 @@ package com.uvg.uvgeats.ui.register
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.uvg.uvgeats.data.model.Result
+import com.uvg.uvgeats.data.repository.AuthRepository
+import com.uvg.uvgeats.data.repository.AuthRepositoryImpl
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -10,7 +13,9 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class RegisterViewModel : ViewModel() {
+class RegisterViewModel(
+    private val authRepository: AuthRepository = AuthRepositoryImpl()
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RegisterUiState())
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
@@ -51,7 +56,14 @@ class RegisterViewModel : ViewModel() {
         // Validaciones
         if (currentState.email.isBlank() || currentState.password.isBlank()) {
             viewModelScope.launch {
-                _uiEffect.send(RegisterUiEffect.ShowError("Por favor completa todos los campos"))
+                _uiEffect.send(RegisterUiEffect.ShowError("completa todos los campos"))
+            }
+            return
+        }
+
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(currentState.email).matches()) {
+            viewModelScope.launch {
+                _uiEffect.send(RegisterUiEffect.ShowError("Email invalido"))
             }
             return
         }
@@ -63,21 +75,34 @@ class RegisterViewModel : ViewModel() {
             return
         }
 
-        if (currentState.password.length < 6) {
-            viewModelScope.launch {
-                _uiEffect.send(RegisterUiEffect.ShowError("La contraseña debe tener al menos 6 caracteres"))
-            }
-            return
-        }
-
-        // Simular registro
+        // Registro con firebase
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
-            kotlinx.coroutines.delay(1000)
-
-            _uiState.update { it.copy(isLoading = false) }
-            _uiEffect.send(RegisterUiEffect.NavigateToHome)
+            when (val result = authRepository.register(currentState.email, currentState.password)) {
+                is Result.Success<*> -> {
+                    _uiState.update { it.copy(isLoading = false) }
+                    _uiEffect.send(RegisterUiEffect.NavigateToHome)
+                }
+                is Result.Error -> {
+                    _uiState.update { it.copy(isLoading = false) }
+                    val errorMessage = when {
+                        result.exception.message?.contains("already in use") == true ->
+                            "Este email ya está registrado"
+                        result.exception.message?.contains("weak-password") == true ->
+                            "La contraseña es muy débil"
+                        result.exception.message?.contains("invalid-email") == true ->
+                            "Email inválido"
+                        result.exception.message?.contains("network") == true ->
+                            "Error de conexión"
+                        else -> "Error al registrar: ${result.exception.message}"
+                    }
+                    _uiEffect.send(RegisterUiEffect.ShowError(errorMessage))
+                }
+                is Result.Loading -> {
+                    _uiState.update { it.copy(isLoading = true) }
+                }
+            }
         }
     }
 }

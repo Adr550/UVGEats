@@ -9,19 +9,27 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.uvg.uvgeats.data.model.Result
+import com.uvg.uvgeats.data.repository.AuthRepository
+import com.uvg.uvgeats.data.repository.AuthRepositoryImpl
 
-class LoginViewModel : ViewModel() {
 
-    // Estado privado mutable
+
+
+class LoginViewModel(
+    private val authRepository: AuthRepository = AuthRepositoryImpl()  // ← AGREGAR ESTO
+) : ViewModel() {
+
+    // estado privado mutable
     private val _uiState = MutableStateFlow(LoginUiState())
-    // Estado público inmutable
+    // estado publico inmutable
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
-    // Canal para efectos one-time (navegación)
+    // canal para efectos
     private val _uiEffect = Channel<LoginUiEffect>()
     val uiEffect = _uiEffect.receiveAsFlow()
 
-    // Manejo de eventos
+    // manejo de eventos
     fun onEvent(event: LoginUiEvent) {
         when (event) {
             is LoginUiEvent.EmailChanged -> {
@@ -44,7 +52,7 @@ class LoginViewModel : ViewModel() {
     private fun performLogin() {
         val currentState = _uiState.value
 
-        // Validación básica
+        // validación basica
         if (currentState.email.isBlank() || currentState.password.isBlank()) {
             viewModelScope.launch {
                 _uiEffect.send(LoginUiEffect.ShowError("Por favor completa todos los campos"))
@@ -52,20 +60,38 @@ class LoginViewModel : ViewModel() {
             return
         }
 
-        // Simular login (aquí iría tu lógica de autenticación real)
+        // validar formato de email
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(currentState.email).matches()) {
+            viewModelScope.launch {
+                _uiEffect.send(LoginUiEffect.ShowError("Email inválido"))
+            }
+            return
+        }
+//Para está sección se utilizó deepseek, para poder implementar un sistema de login por medio de firebas
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
-            // Simular delay de red
-            kotlinx.coroutines.delay(1000)
-
-            // Validación simple para demo
-            if (currentState.email.contains("@")) {
-                _uiState.update { it.copy(isLoading = false) }
-                _uiEffect.send(LoginUiEffect.NavigateToHome)
-            } else {
-                _uiState.update { it.copy(isLoading = false) }
-                _uiEffect.send(LoginUiEffect.ShowError("Credenciales inválidas"))
+            when (val result = authRepository.login(currentState.email, currentState.password)) {
+                is Result.Success<*> -> {
+                    _uiState.update { it.copy(isLoading = false) }
+                    _uiEffect.send(LoginUiEffect.NavigateToHome)
+                }
+                is Result.Error -> {
+                    _uiState.update { it.copy(isLoading = false) }
+                    val errorMessage = when {
+                        result.exception.message?.contains("password") == true ->
+                            "Contraseña incorrecta"
+                        result.exception.message?.contains("user") == true ->
+                            "Usuario no encontrado"
+                        result.exception.message?.contains("network") == true ->
+                            "Error de conexión"
+                        else -> "Error al iniciar sesión: ${result.exception.message}"
+                    }
+                    _uiEffect.send(LoginUiEffect.ShowError(errorMessage))
+                }
+                is Result.Loading -> {
+                    _uiState.update { it.copy(isLoading = true) }
+                }
             }
         }
     }
