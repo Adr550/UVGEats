@@ -2,7 +2,7 @@ package com.uvg.uvgeats.data.repository
 
 import android.content.Context
 import android.util.Log
-import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.database.FirebaseDatabase
 import com.uvg.uvgeats.data.local.AppDatabase
 import com.uvg.uvgeats.data.local.LocalFoodItem
 import com.uvg.uvgeats.data.model.FoodItem
@@ -16,42 +16,36 @@ class FoodRepositoryImpl(
     private val context: Context
 ) : FoodRepository {
 
-    private val firestore = FirebaseFirestore.getInstance()
+    private val realtimeDb = FirebaseDatabase.getInstance().getReference("food_items")
     private val database = AppDatabase.getInstance(context)
     private val foodDao = database.foodDao()
 
     override suspend fun getFoodItems(): Result<List<FoodItem>> {
         return try {
-            // obteniene datos de Firebase
-            Log.d("FoodRepository", "Obteniendo datos de Firebase...")
-            val snapshot = firestore
-                .collection("/food_items")
-                .get()
-                .await()
-
-
-            val firebaseItems = snapshot.documents.mapNotNull { document ->
+            Log.d("FoodRepository", "Obteniendo datos de Realtime Database...")
+            val snapshot = realtimeDb.get().await()
+            val firebaseItems = snapshot.children.mapNotNull { item ->
                 try {
-                    val priceValue = (document.getLong("price")
-                        ?: document.getDouble("price")?.toLong()
-                        ?: 0L).toInt()
+                    val name = item.child("name").getValue(String::class.java) ?: ""
+                    val brand = item.child("brand").getValue(String::class.java) ?: ""
+                    val location = item.child("location").getValue(String::class.java) ?: ""
+                    val price = item.child("price").getValue(Int::class.java) ?: 0
 
                     FoodItem(
-                        name = document.getString("name") ?: "",
-                        brand = document.getString("brand") ?: "",
-                        imageRes = getImageResource(document.getString("imageName") ?: "default"),
-                        price = priceValue,
-                        location = document.getString("location") ?: ""
+                        name = name,
+                        brand = brand,
+                        imageRes = getImageResource(name),
+                        price = price,
+                        location = location
                     )
                 } catch (e: Exception) {
-                    Log.e("FoodRepository", "Error parsing document: ${e.message}")
+                    Log.e("FoodRepository", "Error parseando item: ${e.message}")
                     null
                 }
             }
 
-            Log.d("FoodRepository", "Firebase retornó ${firebaseItems.size} items")
+            Log.d("FoodRepository", "Realtime retornó ${firebaseItems.size} items")
 
-            // Guardar datos en cache local (Room)
             if (firebaseItems.isNotEmpty()) {
                 foodDao.insertFoodItems(firebaseItems.map {
                     LocalFoodItem(
@@ -62,17 +56,13 @@ class FoodRepositoryImpl(
                         location = it.location
                     )
                 })
-                Log.d("FoodRepository", "Datos guardados en Room cache")
             }
 
             Result.Success(firebaseItems)
 
         } catch (firebaseException: Exception) {
-            Log.e("FoodRepository", "Error de Firebase: ${firebaseException.message}")
-
-            // Fallback a Room si Firebase falla (prompt)
+            Log.e("FoodRepository", "Error de Realtime Database: ${firebaseException.message}")
             try {
-                Log.d("FoodRepository", "Intentando con Room cache...")
                 val localItems = foodDao.getAllFoodItems()
                 var foodItems = emptyList<FoodItem>()
                 localItems.collect { localList ->
@@ -86,10 +76,8 @@ class FoodRepositoryImpl(
                         )
                     }
                 }
-                Log.d("FoodRepository", "Room retornó ${foodItems.size} items")
                 Result.Success(foodItems)
             } catch (roomException: Exception) {
-                Log.e("FoodRepository", "Error de Room: ${roomException.message}")
                 Result.Error(AppException.NetworkException("Sin conexión y sin cache disponible"))
             }
         }
@@ -97,45 +85,40 @@ class FoodRepositoryImpl(
 
     override fun getFoodItemsFlow(): Flow<Result<List<FoodItem>>> = flow {
         emit(Result.Loading)
-
         try {
-            val snapshot = firestore
-                .collection("food_items")
-                .document("IzciUli1DK6d9l7Iiew")
-                .collection("food_items")
-                .get()
-                .await()
-            Log.d("FoodRepository", "Snapshot size: ${snapshot.size()}")
-            snapshot.documents.forEach { doc ->
-                Log.d("FoodRepository", "Doc ID=${doc.id}, data=${doc.data}")
+            val snapshot = realtimeDb.get().await()
+            val firebaseItems = snapshot.children.mapNotNull { item ->
+                try {
+                    val name = item.child("name").getValue(String::class.java) ?: ""
+                    val brand = item.child("brand").getValue(String::class.java) ?: ""
+                    val location = item.child("location").getValue(String::class.java) ?: ""
+                    val price = item.child("price").getValue(Int::class.java) ?: 0
+
+                    FoodItem(
+                        name = name,
+                        brand = brand,
+                        imageRes = getImageResource(name),
+                        price = price,
+                        location = location
+                    )
+                } catch (e: Exception) {
+                    null
+                }
             }
 
-            val firebaseItems = snapshot.documents.mapNotNull { document ->
-                val priceValue = (document.getLong("price")
-                    ?: document.getDouble("price")?.toLong()
-                    ?: 0L).toInt()
-
-                FoodItem(
-                    name = document.getString("name") ?: "",
-                    brand = document.getString("brand") ?: "",
-                    imageRes = getImageResource(document.getString("imageName") ?: "default"),
-                    price = priceValue,
-                    location = document.getString("location") ?: ""
-                )
+            if (firebaseItems.isNotEmpty()) {
+                foodDao.insertFoodItems(firebaseItems.map {
+                    LocalFoodItem(
+                        id = it.name.hashCode().toString(),
+                        name = it.name,
+                        brand = it.brand,
+                        price = it.price,
+                        location = it.location
+                    )
+                })
             }
-
-            foodDao.insertFoodItems(firebaseItems.map {
-                LocalFoodItem(
-                    id = it.name.hashCode().toString(),
-                    name = it.name,
-                    brand = it.brand,
-                    price = it.price,
-                    location = it.location
-                )
-            })
 
             emit(Result.Success(firebaseItems))
-
         } catch (e: Exception) {
             try {
                 val localItems = foodDao.getAllFoodItems()
@@ -159,24 +142,22 @@ class FoodRepositoryImpl(
 
     override suspend fun searchFoodItems(query: String): Result<List<FoodItem>> {
         return try {
-            val snapshot = firestore.collection("food_items")
-                .whereGreaterThanOrEqualTo("name", query)
-                .whereLessThanOrEqualTo("name", query + "\uf8ff")
-                .get()
-                .await()
+            val snapshot = realtimeDb.get().await()
+            val items = snapshot.children.mapNotNull { item ->
+                val name = item.child("name").getValue(String::class.java) ?: ""
+                val brand = item.child("brand").getValue(String::class.java) ?: ""
+                val location = item.child("location").getValue(String::class.java) ?: ""
+                val price = item.child("price").getValue(Int::class.java) ?: 0
 
-            val items = snapshot.documents.mapNotNull { document ->
-                val priceValue = (document.getLong("price")
-                    ?: document.getDouble("price")?.toLong()
-                    ?: 0L).toInt()
-
-                FoodItem(
-                    name = document.getString("name") ?: "",
-                    brand = document.getString("brand") ?: "",
-                    imageRes = getImageResource(document.getString("imageName") ?: "default"),
-                    price = priceValue,
-                    location = document.getString("location") ?: ""
-                )
+                if (name.contains(query, ignoreCase = true) || brand.contains(query, ignoreCase = true)) {
+                    FoodItem(
+                        name = name,
+                        brand = brand,
+                        imageRes = getImageResource(name),
+                        price = price,
+                        location = location
+                    )
+                } else null
             }
             Result.Success(items)
         } catch (e: Exception) {

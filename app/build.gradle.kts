@@ -4,7 +4,6 @@ plugins {
     id("com.google.gms.google-services")
     id("kotlin-parcelize")
     id("com.google.devtools.ksp")
-
 }
 
 android {
@@ -17,7 +16,6 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -50,17 +48,20 @@ android {
 }
 
 dependencies {
+    // ✅ Firebase BOM (para mantener versiones compatibles)
+    implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
+
+    // ✅ Firebase Core Services
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-database") // ← Agregado para Realtime Database
+
     // Android Core
     val room_version = "2.6.1"
-
-    implementation("androidx.room:room-runtime:$room_version")
-    implementation("androidx.room:room-ktx:$room_version")
-
-    ksp("androidx.room:room-compiler:$room_version")
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.activity:activity-compose:1.8.2")
-
 
     // Compose
     implementation(platform("androidx.compose:compose-bom:2023.10.01"))
@@ -71,19 +72,11 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.5")
 
     // Room
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
+    implementation("androidx.room:room-runtime:$room_version")
+    implementation("androidx.room:room-ktx:$room_version")
+    ksp("androidx.room:room-compiler:$room_version")
 
-
-    // Firebase BOM (Bill of Materials)
-    implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
-
-    // Firebase dependencies
-    implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-firestore")
-    implementation("com.google.firebase:firebase-auth")
-
-    // Lifecycle para ViewModel
+    // Lifecycle ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
 
@@ -96,4 +89,3 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
-
