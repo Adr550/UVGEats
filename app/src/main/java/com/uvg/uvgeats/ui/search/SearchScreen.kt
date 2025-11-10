@@ -79,7 +79,7 @@ fun SearchScreenRoute(
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return SearchViewModel(
                     context = context,
-                    repository = FoodRepositoryImpl(context)
+                    repository = FoodRepositoryImpl(context) // USA FIREBASE REAL
                 ) as T
             }
         }
@@ -87,6 +87,11 @@ fun SearchScreenRoute(
 
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Log temporal para debug
+    LaunchedEffect(uiState) {
+        println("DEBUG - SearchScreen UIState: isLoading=${uiState.isLoading}, error=${uiState.errorMessage}, items=${uiState.filteredFoodList.size}")
+    }
 
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->
