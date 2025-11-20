@@ -124,7 +124,7 @@ class SearchViewModel(
             return
         }
 
-        // Filtrado local en lugar de llamar al repository
+        // Filtrado local
         val filtered = currentState.foodList.filter { food ->
             food.name.contains(query, ignoreCase = true) ||
                     food.brand.contains(query, ignoreCase = true)
@@ -149,7 +149,7 @@ class SearchViewModel(
     }
 
     fun loadMoreItems() {
-        // Implementación futura para paginación
+        // Implementación para paginación
         Log.d("SearchViewModel", "loadMoreItems llamado")
     }
 }

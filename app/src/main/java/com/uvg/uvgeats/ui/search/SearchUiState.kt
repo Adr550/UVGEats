@@ -1,7 +1,7 @@
 package com.uvg.uvgeats.ui.search
 
 import com.uvg.uvgeats.data.model.FoodItem
-
+//Todos los campos son inmutables
 data class SearchUiState(
     val searchText: String = "",
     val foodList: List<FoodItem> = emptyList(),

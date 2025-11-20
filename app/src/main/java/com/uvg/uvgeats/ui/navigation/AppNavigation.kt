@@ -68,7 +68,7 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 SearchScreenRoute(
                     onNavigateToDetail = { foodItem ->
                         navController.currentBackStackEntry?.savedStateHandle?.set(
-                            "selectedFood",
+                            "selectedFood", //Se preserva la comida seleccionada
                             foodItem
                         )
                         navController.navigate(NavigationRoutes.detail)
@@ -82,7 +82,7 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             composable(NavigationRoutes.detail) {
                 val foodItem = navController.previousBackStackEntry
                     ?.savedStateHandle
-                    ?.get<FoodItem>("selectedFood")
+                    ?.get<FoodItem>("selectedFood") //Get para recuperar el mismo food item
                     ?: FoodItem("Hamburguesa", "Gitane", android.R.drawable.ic_menu_camera)
 
                 DetailScreenRoute(
@@ -93,7 +93,7 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 )
             }
 
-            // ⭐ AQUÍ SE HIZO EL ÚNICO CAMBIO
+            // IA
             composable(NavigationRoutes.favorites) {
                 FavoritesScreenRoute(
                     onBackClick = {

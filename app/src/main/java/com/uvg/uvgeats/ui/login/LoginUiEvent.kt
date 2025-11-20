@@ -1,5 +1,6 @@
 package com.uvg.uvgeats.ui.login
 
+//Estado inmutable data class
 data class LoginUiState(
     val email: String = "",
     val password: String = "",
@@ -7,7 +8,7 @@ data class LoginUiState(
     val errorMessage: String? = null
 )
 
-// eventos de ui
+// eventos de ui sellados
 sealed interface LoginUiEvent {
     data class EmailChanged(val email: String) : LoginUiEvent
     data class PasswordChanged(val password: String) : LoginUiEvent
@@ -15,7 +16,7 @@ sealed interface LoginUiEvent {
     data object ForgotPasswordClicked : LoginUiEvent
 }
 
-// efectos de ui
+// efectos de ui sellados
 sealed interface LoginUiEffect {
     data object NavigateToHome : LoginUiEffect
     data object NavigateToForgotPassword : LoginUiEffect

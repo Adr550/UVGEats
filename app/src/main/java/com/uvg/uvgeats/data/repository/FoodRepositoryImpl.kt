@@ -31,7 +31,7 @@ class FoodRepositoryImpl(
 
     override suspend fun getFoodItems(): Result<List<FoodItem>> {
         return try {
-            Log.d("FoodRepository", "Obteniendo datos de Realtime Database...")
+            Log.d("FoodRepository", "Obteniendo datos de Realtime Database")
 
             val uid = auth.currentUser?.uid
             val favoritesIds = if (uid != null) {
@@ -39,7 +39,7 @@ class FoodRepositoryImpl(
                 favSnapshot.children.mapNotNull { it.key }.toSet()
             } else emptySet()
 
-            val snapshot = realtimeDb.get().await()
+            val snapshot = realtimeDb.get().await() //Suspende la corrutina hasta que termine hasta que fb responda
             val firebaseItems = snapshot.children.mapNotNull { item ->
                 try {
                     val name = item.child("name").getValue(String::class.java) ?: ""
@@ -83,7 +83,7 @@ class FoodRepositoryImpl(
             }
 
             Result.Success(firebaseItems)
-
+///IA para manejo de errores de firebase
         } catch (firebaseException: Exception) {
             Log.e("FoodRepository", "Error de Realtime Database: ${firebaseException.message}")
             try {
@@ -107,13 +107,13 @@ class FoodRepositoryImpl(
             }
         }
     }
-
+//--------------------------------------------------------------------
     override fun getFoodItemsFlow(): Flow<Result<List<FoodItem>>> = flow {
-        emit(Result.Loading)
+        emit(Result.Loading) // Emite estado de carga
         try {
             val uid = auth.currentUser?.uid
             val favoritesIds = if (uid != null) {
-                val favSnapshot = favoritesDb.child(uid).get().await()
+                val favSnapshot = favoritesDb.child(uid).get().await() //await() de coroutines
                 favSnapshot.children.mapNotNull { it.key }.toSet()
             } else emptySet()
 
@@ -254,7 +254,7 @@ class FoodRepositoryImpl(
             )
 
             favRef.setValue(data).await()
-            // Actualizamos cache local
+            // actualiza el cache local
             foodDao.updateFavorite(id, true)
 
             Result.Success(true)
