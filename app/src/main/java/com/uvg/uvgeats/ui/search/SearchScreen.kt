@@ -1,5 +1,6 @@
 package com.uvg.uvgeats.ui.search
 
+import android.R
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -38,6 +39,8 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
@@ -64,6 +67,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.uvg.uvgeats.data.model.FoodItem
 import com.uvg.uvgeats.data.repository.FoodRepositoryImpl
 import kotlinx.coroutines.launch
+import coil.compose.AsyncImage
 
 // Screen con ViewModel
 @Composable
@@ -257,12 +261,12 @@ fun SearchBar(
             .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        androidx.compose.material3.TextField(
+        TextField(
             value = searchText,
             onValueChange = onSearchTextChange,
             placeholder = { Text("Buscar comida o restaurante") },
             modifier = Modifier.weight(1f),
-            colors = androidx.compose.material3.TextFieldDefaults.colors(
+            colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color.Transparent,
                 unfocusedContainerColor = Color.Transparent,
                 disabledContainerColor = Color.Transparent,
@@ -292,8 +296,8 @@ fun FoodCard(food: FoodItem, onClick: () -> Unit) {
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {
-        Image(
-            painter = painterResource(id = food.imageRes),
+        AsyncImage(
+            model = food.imageUrl ?: food.imageRes,
             contentDescription = food.name,
             contentScale = ContentScale.Crop,
             modifier = Modifier
@@ -387,8 +391,8 @@ fun SideBarContent(
 @Composable
 fun SearchScreenPreview() {
     val sampleFoodList = listOf(
-        FoodItem("Hamburguesa", "Gitane", android.R.drawable.ic_menu_camera, 30, "Cafetería CIT"),
-        FoodItem("Pizza", "Gitane", android.R.drawable.ic_menu_gallery, 35, "Cafetería CIT")
+        FoodItem("Hamburguesa", "Gitane", R.drawable.ic_menu_camera, 30, "Cafetería CIT"),
+        FoodItem("Pizza", "Gitane", R.drawable.ic_menu_gallery, 35, "Cafetería CIT")
     )
     SearchScreen(
         uiState = SearchUiState(filteredFoodList = sampleFoodList),

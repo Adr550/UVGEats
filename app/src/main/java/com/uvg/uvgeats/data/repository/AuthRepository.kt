@@ -3,9 +3,9 @@ package com.uvg.uvgeats.data.repository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.uvg.uvgeats.data.model.Result
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.tasks.await
 
 interface AuthRepository {
     suspend fun login(email: String, password: String): Result<FirebaseUser>
@@ -67,10 +67,6 @@ class AuthRepositoryImpl : AuthRepository {
     }
 
     override fun isUserLoggedIn(): Flow<Boolean> = flow {
-        val authStateListener = FirebaseAuth.AuthStateListener { auth ->
-
-        }
-        firebaseAuth.addAuthStateListener(authStateListener)
         emit(firebaseAuth.currentUser != null)
     }
 }

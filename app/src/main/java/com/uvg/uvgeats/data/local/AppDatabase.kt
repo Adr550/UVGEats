@@ -7,7 +7,7 @@ import android.content.Context
 
 @Database(
     entities = [LocalFoodItem::class],
-    version = 1
+    version = 2
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun foodDao(): FoodDao
@@ -15,10 +15,12 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         fun getInstance(context: Context): AppDatabase {
             return Room.databaseBuilder(
-                context,
+                context.applicationContext,
                 AppDatabase::class.java,
                 "uvg_eats_db"
-            ).build()
+            )
+                .fallbackToDestructiveMigration()
+                .build()
         }
     }
 }

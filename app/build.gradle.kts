@@ -50,6 +50,7 @@ android {
 dependencies {
     // ✅ Firebase BOM (para mantener versiones compatibles)
     implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
+    implementation("io.coil-kt:coil-compose:2.6.0")
 
     // ✅ Firebase Core Services
     implementation("com.google.firebase:firebase-analytics")

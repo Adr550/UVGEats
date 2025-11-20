@@ -1,8 +1,6 @@
 package com.uvg.uvgeats.ui.detail
 
-
 import androidx.compose.runtime.getValue
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -12,7 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack  // CAMBIADO
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,22 +28,37 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.uvg.uvgeats.data.model.FoodItem
+import com.uvg.uvgeats.data.repository.FoodRepositoryImpl
 
-// Screen con ViewModel
 @Composable
 fun DetailScreenRoute(
     foodItem: FoodItem,
-    onNavigateBack: () -> Unit,
-    viewModel: DetailViewModel = viewModel()
+    onNavigateBack: () -> Unit
 ) {
+    val context = LocalContext.current
+
+    val viewModel: DetailViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return DetailViewModel(
+                    repository = FoodRepositoryImpl(context)
+                ) as T
+            }
+        }
+    )
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -72,7 +85,6 @@ fun DetailScreenRoute(
     )
 }
 
-// Composable puro sin side effects
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(
@@ -89,7 +101,7 @@ fun DetailScreen(
                 title = { Text("Menu de ${food.name}") },
                 navigationIcon = {
                     IconButton(onClick = { onEvent(DetailUiEvent.BackClicked) }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Atrás")  // CAMBIADO
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Atrás")
                     }
                 },
                 actions = {
@@ -114,8 +126,8 @@ fun DetailScreen(
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            Image(
-                painter = painterResource(id = food.imageRes),
+            AsyncImage(
+                model = food.imageUrl ?: food.imageRes,
                 contentDescription = food.name,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
@@ -160,9 +172,9 @@ fun DetailScreenPreview() {
     val sampleFood = FoodItem(
         name = "Hamburguesa",
         brand = "Gitane",
-        imageRes = android.R.drawable.ic_menu_camera,
         price = 30,
-        location = "Cafetería CIT"
+        location = "Cafetería CIT",
+        imageUrl = null
     )
     DetailScreen(
         uiState = DetailUiState(foodItem = sampleFood),

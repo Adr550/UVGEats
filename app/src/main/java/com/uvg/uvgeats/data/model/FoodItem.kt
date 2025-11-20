@@ -16,7 +16,10 @@ import kotlinx.parcelize.Parcelize
 data class FoodItem(
     val name: String,
     val brand: String,
-    val imageRes: Int,
-    val price: Int = 30,
-    val location: String = "Cafetería CIT"
+    val imageRes: Int = android.R.drawable.ic_menu_camera,
+    val price: Int = 0,
+    val location: String = "",
+    val imageUrl: String? = null,
+    val isFavorite: Boolean = false
+
 ) : Parcelable

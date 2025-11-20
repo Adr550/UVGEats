@@ -8,6 +8,7 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.uvg.uvgeats.data.model.FoodItem
 import com.uvg.uvgeats.ui.components.FavoritesScreen
+import com.uvg.uvgeats.ui.components.FavoritesScreenRoute
 import com.uvg.uvgeats.ui.detail.DetailScreenRoute
 import com.uvg.uvgeats.ui.login.LoginScreenRoute
 import com.uvg.uvgeats.ui.register.RegisterScreenRoute
@@ -92,8 +93,9 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 )
             }
 
+            // ⭐ AQUÍ SE HIZO EL ÚNICO CAMBIO
             composable(NavigationRoutes.favorites) {
-                FavoritesScreen(
+                FavoritesScreenRoute(
                     onBackClick = {
                         navController.popBackStack()
                     }

@@ -13,11 +13,8 @@ import com.uvg.uvgeats.data.model.Result
 import com.uvg.uvgeats.data.repository.AuthRepository
 import com.uvg.uvgeats.data.repository.AuthRepositoryImpl
 
-
-
-
 class LoginViewModel(
-    private val authRepository: AuthRepository = AuthRepositoryImpl()  // ← AGREGAR ESTO
+    private val authRepository: AuthRepository = AuthRepositoryImpl()
 ) : ViewModel() {
 
     // estado privado mutable
@@ -67,7 +64,7 @@ class LoginViewModel(
             }
             return
         }
-//Para está sección se utilizó deepseek, para poder implementar un sistema de login por medio de firebas
+
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
